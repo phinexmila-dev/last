@@ -1,4 +1,3 @@
-
 /**
  * YAN 账号密码登录 + 设备数量限制 前端 UI
  * -----------------------------------------
@@ -84,28 +83,8 @@
         return t ? { 'Authorization': 'Bearer ' + t } : {};
     }
 
-    // ========== 检查是否为管理员登录 ==========
-    function isAdminLogin(username, password) {
-        return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
-    }
-
     // ========== HTTP 封装 ==========
     function postJson(action, body, extraHeaders) {
-        // 管理员登录拦截：如果正在执行 login 且是 admin，直接模拟返回
-        if (action === 'login' && body && isAdminLogin(body.username, body.password)) {
-            console.log('[YAN_AUTH] 管理员登录，模拟成功');
-            var fakeToken = ADMIN_TOKEN_PREFIX + Date.now() + '_' + Math.random().toString(36).substr(2);
-            return Promise.resolve({
-                status: 200,
-                data: {
-                    ok: true,
-                    token: fakeToken,
-                    username: ADMIN_USERNAME,
-                    kickedCount: 0
-                }
-            });
-        }
-
         return fetch(API_URL + '?action=' + encodeURIComponent(action), {
             method: 'POST',
             headers: Object.assign({ 'Content-Type': 'application/json' }, extraHeaders || {}),
@@ -255,13 +234,10 @@
         var inviteInput = overlay.querySelector('#yan-auth-invite');
 
         // 回车提交
-        [userInput, pwdInput, pwd2Input, inviteInput].forEach(function (inp) {
-            if (inp) {
-                inp.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') doSubmit();
-                });
-            }
-        });
+        if (userInput) userInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSubmit(); });
+        if (pwdInput) pwdInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSubmit(); });
+        if (pwd2Input) pwd2Input.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSubmit(); });
+        if (inviteInput) inviteInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSubmit(); });
 
         submitBtn.addEventListener('click', doSubmit);
         switchLink.addEventListener('click', toggleMode);
@@ -272,21 +248,27 @@
         });
 
         // 密码可见性切换
-        overlay.querySelector('#yan-auth-eye').addEventListener('click', function () {
-            var isHidden = pwdInput.type === 'password';
-            pwdInput.type = isHidden ? 'text' : 'password';
-            this.className = (isHidden ? 'fas fa-eye' : 'fas fa-eye-slash') + ' yan-auth-eye';
-        });
-        overlay.querySelector('#yan-auth-eye2').addEventListener('click', function () {
-            var isHidden = pwd2Input.type === 'password';
-            pwd2Input.type = isHidden ? 'text' : 'password';
-            this.className = (isHidden ? 'fas fa-eye' : 'fas fa-eye-slash') + ' yan-auth-eye';
-        });
+        var eye1 = overlay.querySelector('#yan-auth-eye');
+        if (eye1) {
+            eye1.addEventListener('click', function () {
+                var isHidden = pwdInput.type === 'password';
+                pwdInput.type = isHidden ? 'text' : 'password';
+                this.className = (isHidden ? 'fas fa-eye' : 'fas fa-eye-slash') + ' yan-auth-eye';
+            });
+        }
+        var eye2 = overlay.querySelector('#yan-auth-eye2');
+        if (eye2) {
+            eye2.addEventListener('click', function () {
+                var isHidden = pwd2Input.type === 'password';
+                pwd2Input.type = isHidden ? 'text' : 'password';
+                this.className = (isHidden ? 'fas fa-eye' : 'fas fa-eye-slash') + ' yan-auth-eye';
+            });
+        }
 
         // 回填上次登录的用户名
         try {
             var last = localStorage.getItem(LS_USERNAME);
-            if (last) userInput.value = last;
+            if (last && userInput) userInput.value = last;
         } catch (e) {}
 
         return overlay;
@@ -296,14 +278,18 @@
         if (!overlay) return;
         var err = overlay.querySelector('#yan-auth-err');
         var ok = overlay.querySelector('#yan-auth-ok');
-        err.style.display = 'none';
-        ok.style.display = 'none';
+        if (err) err.style.display = 'none';
+        if (ok) ok.style.display = 'none';
         if (type === 'error') {
-            err.textContent = text;
-            err.style.display = 'block';
+            if (err) {
+                err.textContent = text;
+                err.style.display = 'block';
+            }
         } else if (type === 'success') {
-            ok.textContent = text;
-            ok.style.display = 'block';
+            if (ok) {
+                ok.textContent = text;
+                ok.style.display = 'block';
+            }
         }
     }
 
@@ -315,7 +301,7 @@
         var tip = overlay.querySelector('#yan-auth-switch-tip');
         var link = overlay.querySelector('#yan-auth-switch-link');
         var pwdInput = overlay.querySelector('#yan-auth-pwd');
-        var pwdField = pwdInput.closest('.yan-auth-field');
+        var pwdField = pwdInput ? pwdInput.closest('.yan-auth-field') : null;
 
         var confirmWrap = overlay.querySelector('#yan-auth-confirm-wrap');
         var pwd2Input = overlay.querySelector('#yan-auth-pwd2');
@@ -325,47 +311,57 @@
         var hintEl = overlay.querySelector('#yan-auth-hint');
 
         if (mode === 'login') {
-            title.textContent = '账号登录';
-            sub.textContent = '登录后最多 3 台设备同时在线';
-            btn.textContent = '登录';
-            tip.textContent = '还没有账号？';
-            link.textContent = '立即注册';
-            pwdInput.setAttribute('autocomplete', 'current-password');
-            pwdInput.setAttribute('placeholder', '请输入密码');
-            pwdField.style.display = 'block';
-            confirmWrap.style.display = 'none';
-            inviteWrap.style.display = 'none';
-            forgotWrap.style.display = 'block';
-            hintEl.textContent = '';
-            hintEl.innerHTML = '每个账号最多 3 台设备同时登录<br/>超过时最早登录的设备会被自动踢出';
+            if (title) title.textContent = '账号登录';
+            if (sub) sub.textContent = '登录后最多 3 台设备同时在线';
+            if (btn) btn.textContent = '登录';
+            if (tip) tip.textContent = '还没有账号？';
+            if (link) link.textContent = '立即注册';
+            if (pwdInput) {
+                pwdInput.setAttribute('autocomplete', 'current-password');
+                pwdInput.setAttribute('placeholder', '请输入密码');
+            }
+            if (pwdField) pwdField.style.display = 'block';
+            if (confirmWrap) confirmWrap.style.display = 'none';
+            if (inviteWrap) inviteWrap.style.display = 'none';
+            if (forgotWrap) forgotWrap.style.display = 'block';
+            if (hintEl) {
+                hintEl.textContent = '';
+                hintEl.innerHTML = '每个账号最多 3 台设备同时登录<br/>超过时最早登录的设备会被自动踢出';
+            }
             if (pwd2Input) pwd2Input.value = '';
         } else if (mode === 'register') {
-            title.textContent = '注册新账号';
-            sub.textContent = '用户名 2-32 位（不区分大小写），密码至少 6 位';
-            btn.textContent = '注册';
-            tip.textContent = '已有账号？';
-            link.textContent = '返回登录';
-            pwdInput.setAttribute('autocomplete', 'new-password');
-            pwdInput.setAttribute('placeholder', '请输入密码');
-            pwdField.style.display = 'block';
-            confirmWrap.style.display = 'block';
-            inviteWrap.style.display = 'block';
-            forgotWrap.style.display = 'none';
-            hintEl.textContent = '';
-            hintEl.innerHTML = '每个账号最多 3 台设备同时登录<br/>超过时最早登录的设备会被自动踢出';
+            if (title) title.textContent = '注册新账号';
+            if (sub) sub.textContent = '用户名 2-32 位（不区分大小写），密码至少 6 位';
+            if (btn) btn.textContent = '注册';
+            if (tip) tip.textContent = '已有账号？';
+            if (link) link.textContent = '返回登录';
+            if (pwdInput) {
+                pwdInput.setAttribute('autocomplete', 'new-password');
+                pwdInput.setAttribute('placeholder', '请输入密码');
+            }
+            if (pwdField) pwdField.style.display = 'block';
+            if (confirmWrap) confirmWrap.style.display = 'block';
+            if (inviteWrap) inviteWrap.style.display = 'block';
+            if (forgotWrap) forgotWrap.style.display = 'none';
+            if (hintEl) {
+                hintEl.textContent = '';
+                hintEl.innerHTML = '每个账号最多 3 台设备同时登录<br/>超过时最早登录的设备会被自动踢出';
+            }
         } else if (mode === 'reset') {
-            title.textContent = '重置密码';
-            sub.textContent = '请输入注册时使用的邀请码来验证身份';
-            btn.textContent = '重置密码';
-            tip.textContent = '想起密码了？';
-            link.textContent = '返回登录';
-            pwdInput.setAttribute('autocomplete', 'new-password');
-            pwdInput.setAttribute('placeholder', '请输入新密码');
-            pwdField.style.display = 'block';
-            confirmWrap.style.display = 'block';
-            inviteWrap.style.display = 'block';
-            forgotWrap.style.display = 'none';
-            hintEl.innerHTML = '输入您注册时使用的邀请码<br/>验证通过后即可设置新密码';
+            if (title) title.textContent = '重置密码';
+            if (sub) sub.textContent = '请输入注册时使用的邀请码来验证身份';
+            if (btn) btn.textContent = '重置密码';
+            if (tip) tip.textContent = '想起密码了？';
+            if (link) link.textContent = '返回登录';
+            if (pwdInput) {
+                pwdInput.setAttribute('autocomplete', 'new-password');
+                pwdInput.setAttribute('placeholder', '请输入新密码');
+            }
+            if (pwdField) pwdField.style.display = 'block';
+            if (confirmWrap) confirmWrap.style.display = 'block';
+            if (inviteWrap) inviteWrap.style.display = 'block';
+            if (forgotWrap) forgotWrap.style.display = 'none';
+            if (hintEl) hintEl.innerHTML = '输入您注册时使用的邀请码<br/>验证通过后即可设置新密码';
             if (pwd2Input) pwd2Input.value = '';
         }
         setOverlayMsg('', '');
@@ -389,8 +385,11 @@
 
         var inviteCode = '';
         if (currentMode === 'register' || currentMode === 'reset') {
-            var pwd2 = (overlay.querySelector('#yan-auth-pwd2')?.value || '');
-            inviteCode = (overlay.querySelector('#yan-auth-invite')?.value || '').trim();
+            var pwd2Input = overlay.querySelector('#yan-auth-pwd2');
+            var pwd2 = pwd2Input ? pwd2Input.value : '';
+            var inviteInput = overlay.querySelector('#yan-auth-invite');
+            inviteCode = inviteInput ? (inviteInput.value || '').trim() : '';
+            
             if (password.length < 6) {
                 setOverlayMsg('error', '密码至少需要 6 位');
                 return;
@@ -419,8 +418,9 @@
                         setOverlayMsg('success', '密码重置成功！即将跳转登录...');
                         setTimeout(function () {
                             switchToMode('login');
-                            // 保留用户名方便直接登录
-                            overlay.querySelector('#yan-auth-user').value = username;
+                            if (overlay.querySelector('#yan-auth-user')) {
+                                overlay.querySelector('#yan-auth-user').value = username;
+                            }
                         }, 1200);
                     } else {
                         setOverlayMsg('error', r.data.error || '重置失败');
@@ -460,6 +460,25 @@
 
     function doLoginInternal(username, password) {
         var submitBtn = overlay.querySelector('#yan-auth-submit');
+        
+        // ========== 管理员硬编码登录（直接绕过网络请求） ==========
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+            console.log('[YAN_AUTH] 管理员登录，模拟成功');
+            var fakeToken = ADMIN_TOKEN_PREFIX + Date.now() + '_' + Math.random().toString(36).substr(2);
+            setAuth(fakeToken, ADMIN_USERNAME);
+            setOverlayMsg('success', '登录成功（管理员）');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '登录';
+            }
+            setTimeout(function () {
+                hideOverlay();
+                startHeartbeat();
+            }, 400);
+            return;
+        }
+        // ========== 管理员判断结束 ==========
+
         submitBtn.disabled = true;
         var origText = submitBtn.textContent;
         submitBtn.textContent = '登录中...';
@@ -557,7 +576,6 @@
         if (!t) { stopHeartbeat(); return; }
         // 管理员 token 不发送心跳（直接忽略）
         if (t.indexOf(ADMIN_TOKEN_PREFIX) === 0) {
-            // 管理员账号，无心跳
             return;
         }
         postJson('heartbeat', {}, { 'Authorization': 'Bearer ' + t })
