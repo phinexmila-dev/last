@@ -3,7 +3,6 @@
 // 适配路径: https://phinexmila-dev.github.io/last/
 
 const CACHE_NAME = 'yan-v20260521';
-const OFFLINE_URL = '/last/offline.html';
 
 // 需要缓存的静态资源（核心文件）
 const STATIC_CACHE_URLS = [
