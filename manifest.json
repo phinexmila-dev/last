@@ -1,12 +1,26 @@
 {
   "name": "YAN",
   "short_name": "YAN",
-  "start_url": "/last/index.html",
-  "scope": "/last/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#ededed",
   "theme_color": "#07c160",
   "icons": [
-    { "src": "images/icon-192x192.png", "sizes": "192x192", "type": "image/png" }
+    {
+      "src": "images/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "images/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
   ]
 }
